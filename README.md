@@ -1,100 +1,157 @@
-# Oracle Cloud Infrastructure GitOps Project
+# Oracle Cloud Infrastructure Terraform Automation
 
-This project demonstrates GitOps practices for deploying VPS infrastructure on Oracle Cloud's Always Free tier using Terraform.
+Infrastructure as Code (IaC) project for deploying virtual private servers on Oracle Cloud Infrastructure using Terraform and GitHub Actions for CI/CD automation.
 
-## 🏗️ Architecture
+## Overview
 
-- **Terraform modules** for reusable infrastructure components
-- **GitHub Actions** for CI/CD automation
-- **Always Free tier** resources (2 OCPUs, 12GB RAM)
-- **Ubuntu 24.04** minimal server setup
-- **Nginx** web server ready for deployment
+This project demonstrates a GitOps workflow for managing cloud infrastructure using:
 
-## 🚀 Quick Start
+- **Terraform** for infrastructure provisioning
+- **GitHub Actions** for automated deployment pipelines
+- **Oracle Cloud Always Free tier** resources
+- **Modular architecture** for reusable infrastructure components
 
-### Prerequisites
+## Architecture
+
+The infrastructure creates:
+- Virtual Cloud Network (VCN) with public subnet
+- VM.Standard.A1.Flex compute instance (ARM-based)
+- Security groups allowing SSH, HTTP, and HTTPS traffic
+- Ubuntu 24.04 LTS with Nginx web server
+
+## Project Structure
+
+```
+├── modules/
+│   └── vps-definition/           # Reusable VPS module
+│       ├── main.tf              # Infrastructure resources
+│       ├── variables.tf         # Module input variables
+│       ├── outputs.tf           # Module outputs
+│       └── cloud-init.yaml      # Server initialization script
+├── projects/
+│   └── prod/                    # Production environment
+│       ├── main.tf             # Module composition
+│       ├── variables.tf        # Environment variables
+│       └── outputs.tf          # Environment outputs
+└── .github/
+    └── workflows/
+        └── terraform.yml       # CI/CD pipeline
+```
+
+## Prerequisites
 
 1. Oracle Cloud Infrastructure account
-2. API key pair generated in OCI
+2. OCI API key pair generated in your user profile
 3. SSH key pair for server access
+4. Terraform >= 1.5.0
 
-### Local Development Setup
+## Local Development Setup
 
-1. **Clone the repository**
+1. Clone the repository:
    ```bash
-   git clone <your-repo-url>
-   cd oracle-cloud-gitops
+   git clone <repository-url>
+   cd oracle-cloud-terraform
    ```
 
-2. **Set up environment variables**
+2. Create environment configuration:
    ```bash
    cp .env.example .env
-   # Edit .env with your actual OCI credentials
-   source .env
    ```
 
-3. **Deploy infrastructure**
+3. Edit `.env` with your OCI credentials:
    ```bash
+   export TF_VAR_tenancy_ocid="your-tenancy-ocid"
+   export TF_VAR_user_ocid="your-user-ocid"
+   export TF_VAR_fingerprint="your-api-key-fingerprint"
+   export TF_VAR_private_key="-----BEGIN PRIVATE KEY-----
+   your-private-key-content
+   -----END PRIVATE KEY-----"
+   export TF_VAR_ssh_public_keys='[{"user":"username","publickey":"ssh-ed25519 AAAAC3... your-key"}]'
+   ```
+
+4. Initialize and deploy:
+   ```bash
+   source .env
    cd projects/prod
    terraform init
    terraform plan
    terraform apply
    ```
 
-### GitHub Actions Setup
+## GitHub Actions Setup
 
-1. **Add repository secrets** in GitHub Settings → Secrets and variables → Actions:
-   - `OCI_TENANCY_OCID`: Your OCI tenancy OCID
-   - `OCI_USER_OCID`: Your OCI user OCID  
-   - `OCI_FINGERPRINT`: Your API key fingerprint
-   - `OCI_PRIVATE_KEY_PATH`: Path to private key (e.g., `~/.oci/oci_api_key.pem`)
-   - `SSH_PUBLIC_KEYS`: JSON array of SSH keys (see format below)
+### Required Secrets
 
-2. **SSH Keys format for GitHub secret**:
-   ```json
-   [{"user":"your-username","publickey":"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... your-public-key"}]
-   ```
+Configure the following secrets in your GitHub repository settings:
 
-3. **Automated deployment**:
-   - Pull requests trigger `terraform plan`
-   - Pushes to `main` trigger `terraform apply`
+| Secret Name | Description |
+|-------------|-------------|
+| `OCI_TENANCY_OCID` | Your OCI tenancy identifier |
+| `OCI_USER_OCID` | Your OCI user identifier |
+| `OCI_FINGERPRINT` | API key fingerprint |
+| `OCI_PRIVATE_KEY` | Complete private key content |
+| `SSH_PUBLIC_KEYS` | JSON array of SSH public keys |
 
-## 📁 Project Structure
+### SSH Keys Format
 
-```
-├── modules/vps-definition/    # Reusable VPS module
-│   ├── main.tf               # VCN, compute, networking
-│   ├── variables.tf          # Module inputs
-│   ├── outputs.tf            # Module outputs
-│   └── cloud-init.yaml       # Server initialization
-├── projects/prod/            # Production environment
-│   ├── main.tf              # Module composition
-│   ├── variables.tf         # Environment variables
-│   └── outputs.tf           # Environment outputs
-└── .github/workflows/        # CI/CD automation
-    └── terraform.yml         # GitHub Actions workflow
+The `SSH_PUBLIC_KEYS` secret should contain a JSON array:
+```json
+[{"user":"your-username","publickey":"ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... your-public-key"}]
 ```
 
-## 🔒 Security
+### Workflow Behavior
 
-- No sensitive data committed to repository
-- Secrets managed via environment variables and GitHub Secrets
-- State file excluded from version control
+- **Pull Requests**: Runs `terraform plan` and comments results on the PR
+- **Main Branch**: Automatically applies infrastructure changes with `terraform apply`
+
+## Resource Specifications
+
+This configuration uses Oracle Cloud's Always Free tier resources:
+
+- **Compute**: VM.Standard.A1.Flex (2 OCPUs, 12 GB RAM)
+- **Storage**: 47 GB boot volume
+- **Network**: Public IP with internet gateway
+- **Operating System**: Ubuntu 24.04 LTS
+- **Cost**: $0.00 (within Always Free limits)
+
+## Usage
+
+### Accessing the Server
+
+After deployment, connect via SSH:
+```bash
+ssh ubuntu@<public-ip-address>
+```
+
+The public IP address is displayed in Terraform outputs.
+
+### Deploying Websites
+
+The server includes Nginx web server. Deploy your content to:
+```bash
+sudo cp your-files /var/www/html/
+```
+
+### Modifying Infrastructure
+
+1. Make changes to Terraform files
+2. Create a pull request to review the plan
+3. Merge to main branch to apply changes
+
+## Security Considerations
+
+- No sensitive data is stored in the repository
+- Secrets are managed through environment variables and GitHub Secrets
+- Terraform state is excluded from version control
 - SSH key-based authentication only
+- Firewall configured to allow only necessary ports
 
-## 💰 Cost
+## Module Customization
 
-This project uses Oracle Cloud's Always Free tier resources:
-- **Compute**: VM.Standard.A1.Flex (2 OCPUs, 12GB RAM)
-- **Networking**: VCN, subnet, internet gateway
-- **Storage**: Boot volume included
-- **Cost**: $0.00/month (within Always Free limits)
+The VPS module accepts these parameters:
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
-
-Pull requests automatically trigger Terraform plans for review.
+- `instance_name`: Display name for the instance
+- `hostname_label`: DNS hostname label
+- `ssh_public_keys`: List of SSH public keys
+- `ocpus`: Number of OCPUs (1-4 for Always Free)
+- `memory_in_gbs`: Memory allocation (6-24 GB for Always Free)
