@@ -15,7 +15,8 @@ provider "oci" {
   tenancy_ocid     = var.tenancy_ocid
   user_ocid        = var.user_ocid
   fingerprint      = var.fingerprint
-  private_key_path = var.private_key_path
+  private_key      = var.private_key != "" ? var.private_key : null
+  private_key_path = var.private_key_path != "" ? var.private_key_path : null
   region           = var.region
 }
 
@@ -27,12 +28,12 @@ data "oci_identity_tenancy" "current" {
 # Create VPS using the module
 module "web_vps" {
   source = "../../modules/vps-definition"
- 
-  compartment_id   = var.tenancy_ocid  # Using root compartment
-  instance_name    = "pablo-web-vps"
-  hostname_label   = "pablovps"
-  ssh_public_keys  = var.ssh_public_keys
- 
+
+  compartment_id  = var.tenancy_ocid # Using root compartment
+  instance_name   = "pablo-web-vps"
+  hostname_label  = "pablovps"
+  ssh_public_keys = var.ssh_public_keys
+
   # Using half of Always Free resources
   ocpus         = 2
   memory_in_gbs = 12
