@@ -44,12 +44,42 @@ jobs:
 
     - name: Terraform Plan
       if: github.event_name == 'pull_request'
+      id: plan
       env:
         TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
         TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
         TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
         TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
-      run: terraform plan -no-color
+        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+      run: |
+        echo 'plan<<EOF' >> $GITHUB_OUTPUT
+        terraform plan -no-color >> $GITHUB_OUTPUT
+        echo 'EOF' >> $GITHUB_OUTPUT
+      continue-on-error: true
+
+    - name: Comment PR with Plan
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const output = `#### Terraform Plan 📖
+          
+          <details><summary>Show Plan</summary>
+          
+          \`\`\`terraform
+          ${{ steps.plan.outputs.plan }}
+          \`\`\`
+          
+          </details>
+          
+          *Pusher: @${{ github.actor }}, Action: \`${{ github.event_name }}\`*`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: output
+          })
 
     - name: Terraform Apply
       if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -58,4 +88,5 @@ jobs:
         TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
         TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
         TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
+        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
       run: terraform apply -auto-approve
