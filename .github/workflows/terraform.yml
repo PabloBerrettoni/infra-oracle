@@ -48,8 +48,7 @@ jobs:
         TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
         TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
         TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-        TF_VAR_private_key_path: ${{ secrets.OCI_PRIVATE_KEY_PATH }}
-        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+        TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
       run: terraform plan -no-color
 
     - name: Terraform Apply
@@ -58,6 +57,5 @@ jobs:
         TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
         TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
         TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
-        TF_VAR_private_key_path: ${{ secrets.OCI_PRIVATE_KEY_PATH }}
-        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+        TF_VAR_private_key: ${{ secrets.OCI_PRIVATE_KEY }}
       run: terraform apply -auto-approve
