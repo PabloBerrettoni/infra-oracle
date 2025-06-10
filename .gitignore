@@ -1,0 +1,38 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+.terraform.tfstate.lock.info
+*.tfvars
+*.tfvars.json
+*tfplan*
+.terraformrc
+terraform.rc
+
+# Keep dependency lock file
+!.terraform.lock.hcl
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private keys
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+
+# Logs
+*.log

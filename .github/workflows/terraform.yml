@@ -1,0 +1,58 @@
+name: 'Terraform CI/CD'
+
+on:
+  pull_request:
+    paths: ['projects/prod/**']
+  push:
+    branches: [main]
+    paths: ['projects/prod/**']
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/prod
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
+      with:
+        terraform_version: 1.6.0
+
+    - name: Terraform Init
+      run: terraform init
+
+    - name: Terraform Format Check
+      run: terraform fmt -check
+
+    - name: Terraform Validate
+      run: terraform validate
+
+    - name: Terraform Plan
+      if: github.event_name == 'pull_request'
+      env:
+        TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+        TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
+        TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+        TF_VAR_private_key_path: ${{ secrets.OCI_PRIVATE_KEY_PATH }}
+        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+      run: terraform plan -no-color
+
+    - name: Terraform Apply
+      if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+      env:
+        TF_VAR_tenancy_ocid: ${{ secrets.OCI_TENANCY_OCID }}
+        TF_VAR_user_ocid: ${{ secrets.OCI_USER_OCID }}
+        TF_VAR_fingerprint: ${{ secrets.OCI_FINGERPRINT }}
+        TF_VAR_private_key_path: ${{ secrets.OCI_PRIVATE_KEY_PATH }}
+        TF_VAR_ssh_public_keys: ${{ secrets.SSH_PUBLIC_KEYS }}
+      run: terraform apply -auto-approve
