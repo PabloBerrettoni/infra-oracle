@@ -18,7 +18,7 @@ variable "fingerprint" {
 variable "private_key_path" {
   description = "Path to the private key file"
   type        = string
-  default     = "~/.oci/oci_api_key.pem"  # Generic path, actual key stored securely
+  default     = "~/.oci/oci_api_key.pem" # Generic path, actual key stored securely
 }
 
 variable "region" {
