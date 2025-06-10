@@ -2,10 +2,15 @@ name: 'Terraform CI/CD'
 
 on:
   pull_request:
-    paths: ['projects/prod/**']
+    paths: 
+      - 'projects/**'
+      - 'modules/**'
+      - '.github/workflows/**'
   push:
     branches: [main]
-    paths: ['projects/prod/**']
+    paths: 
+      - 'projects/**'
+      - 'modules/**'
 
 permissions:
   contents: read
