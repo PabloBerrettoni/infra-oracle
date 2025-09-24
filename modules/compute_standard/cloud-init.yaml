@@ -1,0 +1,12 @@
+#cloud-config
+users:
+  - name: opc
+    ssh-authorized-keys:
+      - ${ssh_public_key}
+package_update: false
+package_upgrade: false
+packages:
+  - podman
+runcmd:
+  - podman pull docker.io/PabloBerrettoni/Portfolio
+  - podman run -d --name portfolio -p 80:80 -p 443:443 docker.io/PabloBerrettoni/Portfolio
