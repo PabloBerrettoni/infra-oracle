@@ -1,72 +1,61 @@
 # Oracle Cloud Infrastructure Terraform Automation
 
-Infrastructure as Code (IaC) project for deploying virtual private servers on Oracle Cloud Infrastructure using Terraform and GitHub Actions for CI/CD automation.
+This project provides Infrastructure as Code (IaC) for deploying and managing cloud resources on Oracle Cloud Infrastructure (OCI) using [Terraform](https://www.terraform.io/). It features a modular architecture, supports CI/CD with GitHub Actions, and leverages Oracle Cloud's Always Free tier.
 
-## Overview
+---
 
-This project demonstrates a GitOps workflow for managing cloud infrastructure using:
+## Features
 
-- **Terraform** for infrastructure provisioning
-- **GitHub Actions** for automated deployment pipelines
-- **Oracle Cloud Always Free tier** resources
-- **Modular architecture** for reusable infrastructure components
+- **Modular Terraform**: Reusable modules for compute, networking, DNS, and backend state.
+- **Automated CI/CD**: GitHub Actions workflow for plan/apply on PRs and main branch.
+- **Secure State Management**: Remote state stored in OCI Object Storage.
+- **Production-Ready**: SSH, HTTP, and HTTPS access, Nginx reverse proxy, Dockerized app, and automatic SSL via Certbot.
+- **Always Free Tier**: Designed to run within Oracle's free resource limits.
 
-## Architecture
-
-The infrastructure creates:
-- Virtual Cloud Network (VCN) with public subnet
-- VM.Standard.A1.Flex compute instance (ARM-based)
-- Security groups allowing SSH, HTTP, and HTTPS traffic
-- Ubuntu 24.04 LTS with Nginx web server
+---
 
 ## Project Structure
 
 ```
 ├── modules/
-│   ├── compute_standard/         # Compute instance module
-│   │   ├── main.tf              # Instance resources
-│   │   ├── variables.tf         # Input variables
-│   │   └── cloud-init.yaml      # Server initialization script
-|   ├── compute_arm/         # Compute instance module
-│   │   ├── main.tf              # Instance resources
-│   │   ├── variables.tf         # Input variables
-│   │   └── cloud-init.yaml      # Server initialization script
-│   └── network/                 # Networking module
-│       ├── main.tf              # VCN, subnet, and security rules
-│       ├── outputs.tf           # Subnet and VCN IDs
-│       └── variables.tf         # Input variables
+│   ├── compute_standard/         # Standard compute instance (x86)
+│   ├── compute_arm/              # ARM compute instance (A1 Flex)
+│   ├── network/                  # VCN, subnet, security, gateway
+│   ├── dns/                      # DNS zone and records
+│   └── backend/                  # Remote state bucket module
 ├── projects/
-│   └── prod/                    # Production environment
-│       ├── main.tf              # Module composition
-│       └── variables.tf         # Environment variables
-├── .env                         # Environment variables
-├── README.md                    # Project documentation
+│   └── prod/                     # Production environment composition
 ├── .github/
-    └── workflows/
-        └── terraform.yml       # CI/CD pipeline
+│   └── workflows/                # GitHub Actions workflow
+├── .env.example                  # Example environment variables
+├── .gitignore                    # Ignore rules
+└── README.md                     # Project documentation
 ```
+
+---
 
 ## Prerequisites
 
-1. Oracle Cloud Infrastructure account
-2. OCI API key pair generated in your user profile
-3. SSH key pair for server access
-4. Terraform >= 1.5.0
+- Oracle Cloud account with API keys
+- Terraform >= 1.13.0
+- SSH key pair for server access
+
+---
 
 ## Local Development Setup
 
-1. Clone the repository:
+1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd oracle-cloud-terraform
+   cd Oracle-Infra
    ```
 
-2. Create environment configuration:
+2. **Create environment configuration**
    ```bash
    cp .env.example .env
    ```
 
-3. Edit `.env` with your OCI credentials:
+3. **Edit `.env` with your OCI credentials**
    ```bash
    export TF_VAR_tenancy_ocid="your-tenancy-ocid"
    export TF_VAR_user_ocid="your-user-ocid"
@@ -77,7 +66,7 @@ The infrastructure creates:
    export TF_VAR_ssh_public_keys='[{"user":"username","publickey":"ssh-ed25519 AAAAC3... your-key"}]'
    ```
 
-4. Initialize and deploy:
+4. **Initialize and deploy**
    ```bash
    source .env
    cd projects/prod
@@ -86,19 +75,21 @@ The infrastructure creates:
    terraform apply
    ```
 
+---
+
 ## GitHub Actions Setup
 
 ### Required Secrets
 
 Configure the following secrets in your GitHub repository settings:
 
-| Secret Name | Description |
-|-------------|-------------|
-| `OCI_TENANCY_OCID` | Your OCI tenancy identifier |
-| `OCI_USER_OCID` | Your OCI user identifier |
-| `OCI_FINGERPRINT` | API key fingerprint |
-| `OCI_PRIVATE_KEY` | Complete private key content |
-| `SSH_PUBLIC_KEYS` | JSON array of SSH public keys |
+| Secret Name        | Description                        |
+|--------------------|------------------------------------|
+| `OCI_TENANCY_OCID` | Your OCI tenancy identifier        |
+| `OCI_USER_OCID`    | Your OCI user identifier           |
+| `OCI_FINGERPRINT`  | API key fingerprint                |
+| `OCI_PRIVATE_KEY`  | Complete private key content       |
+| `SSH_PUBLIC_KEYS`  | JSON array of SSH public keys      |
 
 ### SSH Keys Format
 
@@ -112,24 +103,27 @@ The `SSH_PUBLIC_KEYS` secret should contain a JSON array:
 - **Pull Requests**: Runs `terraform plan` and comments results on the PR
 - **Main Branch**: Automatically applies infrastructure changes with `terraform apply`
 
+---
+
 ## Resource Specifications
 
 This configuration uses Oracle Cloud's Always Free tier resources:
 
-STANDARD:
-- **Compute**: `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB RAM).
-- **Storage**: 50 GB boot volume.
-- **Network**: Public IP with internet gateway.
-- **Operating System**: Oracle Linux 8.
-- **Cost**: $0.00 (within Always Free limits).
+**STANDARD:**
+- **Compute**: `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB RAM)
+- **Storage**: 50 GB boot volume
+- **Network**: Public IP with internet gateway
+- **Operating System**: Oracle Linux 8
+- **Cost**: $0.00 (within Always Free limits)
 
-
-ARM:
+**ARM:**
 - **Compute**: VM.Standard.A1.Flex (2 OCPUs, 12 GB RAM)
 - **Storage**: 47 GB boot volume
 - **Network**: Public IP with internet gateway
 - **Operating System**: Ubuntu 24.04 LTS
 - **Cost**: $0.00 (within Always Free limits)
+
+---
 
 ## Usage
 
@@ -137,9 +131,8 @@ ARM:
 
 After deployment, connect via SSH:
 ```bash
-ssh opc@<public-ip-address>
+ssh ubuntu@<public-ip-address>
 ```
-
 The public IP address is displayed in Terraform outputs.
 
 ### Deploying Websites
@@ -155,6 +148,8 @@ sudo cp your-files /var/www/html/
 2. Create a pull request to review the plan
 3. Merge to main branch to apply changes
 
+---
+
 ## Security Considerations
 
 - No sensitive data is stored in the repository
@@ -162,6 +157,8 @@ sudo cp your-files /var/www/html/
 - Terraform state is excluded from version control
 - SSH key-based authentication only
 - Firewall configured to allow only necessary ports
+
+---
 
 ## Module Customization
 
@@ -172,3 +169,17 @@ The VPS module accepts these parameters:
 - `ssh_public_keys`: List of SSH public keys
 - `ocpus`: Number of OCPUs (1-4 for Always Free)
 - `memory_in_gbs`: Memory allocation (6-24 GB for Always Free)
+
+---
+
+## License
+
+MIT License. See [LICENSE](LICENSE) if present.
+
+---
+
+## Author
+
+Pablo Berrettoni
+
+---
