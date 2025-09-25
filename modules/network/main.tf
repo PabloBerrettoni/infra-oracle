@@ -2,7 +2,7 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = "~> 6.0"
+      version = ">= 7.20.0"
     }
   }
 }
@@ -92,4 +92,5 @@ resource "oci_core_subnet" "public" {
   display_name        = "${var.network_name}-public-subnet"
   dns_label           = "public"
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  prohibit_public_ip_on_vnic = false
 }

@@ -5,7 +5,7 @@ terraform {
   required_providers {
     oci = {
       source  = "oracle/oci"
-      version = "~> 6.0"
+      version = ">= 7.20.0"
     }
   }
 }
@@ -30,6 +30,13 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.tenancy_ocid
 }
 
+# Create DNS Zone and Records
+module "dns" {
+  source        = "../../modules/dns"
+  tenancy_ocid  = var.tenancy_ocid
+  vm_public_ip  = module.compute_standard.public_ip
+}
+
 # Create networking resources
 module "network" {
   source = "../../modules/network"
@@ -38,6 +45,7 @@ module "network" {
   network_name   = "pablo-web-vps"
 }
 
+# Create Compute Standard instance
 module "compute_standard" {
   source = "../../modules/compute_standard"
 
@@ -63,5 +71,3 @@ module "compute_standard" {
   domain          = "pabloberrettoni.com"
   email           = "pabloberrettoni98@gmail.com"
 } */
-
-# Create Compute Standard instance
