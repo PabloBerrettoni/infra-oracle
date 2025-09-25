@@ -23,17 +23,25 @@ The infrastructure creates:
 
 ```
 ├── modules/
-│   └── vps-definition/           # Reusable VPS module
-│       ├── main.tf              # Infrastructure resources
-│       ├── variables.tf         # Module input variables
-│       ├── outputs.tf           # Module outputs
-│       └── cloud-init.yaml      # Server initialization script
+│   ├── compute_standard/         # Compute instance module
+│   │   ├── main.tf              # Instance resources
+│   │   ├── variables.tf         # Input variables
+│   │   └── cloud-init.yaml      # Server initialization script
+|   ├── compute_arm/         # Compute instance module
+│   │   ├── main.tf              # Instance resources
+│   │   ├── variables.tf         # Input variables
+│   │   └── cloud-init.yaml      # Server initialization script
+│   └── network/                 # Networking module
+│       ├── main.tf              # VCN, subnet, and security rules
+│       ├── outputs.tf           # Subnet and VCN IDs
+│       └── variables.tf         # Input variables
 ├── projects/
 │   └── prod/                    # Production environment
-│       ├── main.tf             # Module composition
-│       ├── variables.tf        # Environment variables
-│       └── outputs.tf          # Environment outputs
-└── .github/
+│       ├── main.tf              # Module composition
+│       └── variables.tf         # Environment variables
+├── .env                         # Environment variables
+├── README.md                    # Project documentation
+├── .github/
     └── workflows/
         └── terraform.yml       # CI/CD pipeline
 ```
@@ -108,6 +116,15 @@ The `SSH_PUBLIC_KEYS` secret should contain a JSON array:
 
 This configuration uses Oracle Cloud's Always Free tier resources:
 
+STANDARD:
+- **Compute**: `VM.Standard.E2.1.Micro` (1 OCPU, 1 GB RAM).
+- **Storage**: 50 GB boot volume.
+- **Network**: Public IP with internet gateway.
+- **Operating System**: Oracle Linux 8.
+- **Cost**: $0.00 (within Always Free limits).
+
+
+ARM:
 - **Compute**: VM.Standard.A1.Flex (2 OCPUs, 12 GB RAM)
 - **Storage**: 47 GB boot volume
 - **Network**: Public IP with internet gateway
@@ -120,7 +137,7 @@ This configuration uses Oracle Cloud's Always Free tier resources:
 
 After deployment, connect via SSH:
 ```bash
-ssh ubuntu@<public-ip-address>
+ssh opc@<public-ip-address>
 ```
 
 The public IP address is displayed in Terraform outputs.
