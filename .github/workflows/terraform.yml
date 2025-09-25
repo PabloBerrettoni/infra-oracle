@@ -36,15 +36,21 @@ jobs:
 
     - name: Terraform Init
       run: |
-        terraform init -backend-config="bucket=terraform-state" \
-                       -backend-config="namespace=grutjt8nmecj" \
-                       -backend-config="region=sa-saopaulo-1" \
-                       -backend-config="key=prod/terraform.tfstate" \
-                       -backend-config="tenancy_ocid=${{ secrets.OCI_TENANCY_OCID }}" \
-                       -backend-config="user_ocid=${{ secrets.OCI_USER_OCID }}" \
-                       -backend-config="fingerprint=${{ secrets.OCI_FINGERPRINT }}" \
-                       -backend-config="private_key_path=${{ secrets.OCI_PRIVATE_KEY_PATH }}" \
-                       -backend-config="auth=APIKey"
+        # Creamos un archivo temporal con la private key
+        echo "${{ secrets.OCI_PRIVATE_KEY }}" > oci_key.pem
+        chmod 600 oci_key.pem
+
+        terraform init \
+          -backend-config="bucket=terraform-state" \
+          -backend-config="namespace=grutjt8nmecj" \
+          -backend-config="region=sa-saopaulo-1" \
+          -backend-config="key=prod/terraform.tfstate" \
+          -backend-config="tenancy_ocid=${{ secrets.OCI_TENANCY_OCID }}" \
+          -backend-config="user_ocid=${{ secrets.OCI_USER_OCID }}" \
+          -backend-config="fingerprint=${{ secrets.OCI_FINGERPRINT }}" \
+          -backend-config="private_key_path=oci_key.pem" \
+          -backend-config="auth=APIKey"
+      shell: bash
 
     - name: Terraform Format Check
       run: terraform fmt -check
