@@ -18,7 +18,7 @@ output "vps_private_ip" {
 
 output "ssh_command" {
   description = "SSH command to connect to the VPS"
-  value       = "ssh opc@${module.compute_standard.public_ip}"
+  value       = "ssh ubuntu@${module.compute_standard.public_ip}"
 }
 
 output "website_url" {
