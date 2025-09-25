@@ -1,12 +1,18 @@
 # projects/prod/main.tf
 
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.12"
   required_providers {
     oci = {
       source  = "oracle/oci"
       version = ">= 7.20.0"
     }
+  }
+  backend "oci" {
+    bucket    = "terraform-state"
+    namespace = "grutjt8nmecj"   
+    region    = "sa-saopaulo-1"
+    key       = "prod/terraform.tfstate"
   }
 }
 
@@ -43,6 +49,14 @@ module "network" {
 
   compartment_id = var.tenancy_ocid
   network_name   = "pablo-web-vps"
+}
+
+# Backend bucket creation
+module "backend" {
+  source          = "../../modules/backend"
+  tenancy_ocid    = var.tenancy_ocid
+  compartment_ocid = var.tenancy_ocid
+  region          = var.region
 }
 
 # Create Compute Standard instance
