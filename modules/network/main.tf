@@ -86,11 +86,11 @@ resource "oci_core_default_security_list" "main" {
 
 # Create Public Subnet
 resource "oci_core_subnet" "public" {
-  compartment_id      = var.compartment_id
-  vcn_id              = oci_core_vcn.main.id
-  cidr_block          = "10.0.1.0/24"
-  display_name        = "${var.network_name}-public-subnet"
-  dns_label           = "public"
-  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id             = var.compartment_id
+  vcn_id                     = oci_core_vcn.main.id
+  cidr_block                 = "10.0.1.0/24"
+  display_name               = "${var.network_name}-public-subnet"
+  dns_label                  = "public"
+  availability_domain        = data.oci_identity_availability_domains.ads.availability_domains[0].name
   prohibit_public_ip_on_vnic = false
 }

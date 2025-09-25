@@ -10,7 +10,7 @@ terraform {
   }
   backend "oci" {
     bucket    = "terraform-state"
-    namespace = "grutjt8nmecj"   
+    namespace = "grutjt8nmecj"
     region    = "sa-saopaulo-1"
     key       = "prod/terraform.tfstate"
   }
@@ -38,9 +38,9 @@ data "oci_identity_availability_domains" "ads" {
 
 # Create DNS Zone and Records
 module "dns" {
-  source        = "../../modules/dns"
-  tenancy_ocid  = var.tenancy_ocid
-  vm_public_ip  = module.compute_standard.public_ip
+  source       = "../../modules/dns"
+  tenancy_ocid = var.tenancy_ocid
+  vm_public_ip = module.compute_standard.public_ip
 }
 
 # Create networking resources
@@ -53,10 +53,10 @@ module "network" {
 
 # Backend bucket creation
 module "backend" {
-  source          = "../../modules/backend"
-  tenancy_ocid    = var.tenancy_ocid
+  source           = "../../modules/backend"
+  tenancy_ocid     = var.tenancy_ocid
   compartment_ocid = var.tenancy_ocid
-  region          = var.region
+  region           = var.region
 }
 
 # Create Compute Standard instance
