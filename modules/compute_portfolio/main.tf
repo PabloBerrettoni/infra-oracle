@@ -43,6 +43,7 @@ resource "oci_core_instance" "vps_standard" {
       container_name = var.container_name
       container_port = var.container_port
       subdomain      = var.subdomain
+      domains        = join(" ", var.domains)
       email          = var.email
     }))
   }

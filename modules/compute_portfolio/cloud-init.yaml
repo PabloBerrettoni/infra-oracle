@@ -39,7 +39,7 @@ runcmd:
     cat > /etc/nginx/sites-available/${container_name} <<EOF
     server {
         listen 80;
-        server_name ${subdomain};
+        server_name ${domains};
 
         location / {
             proxy_pass http://127.0.0.1:${container_port};
@@ -53,5 +53,30 @@ runcmd:
   - rm -f /etc/nginx/sites-enabled/default
   - nginx -t
   - systemctl restart nginx
-  - certbot --nginx --non-interactive --agree-tos -m ${email} -d ${subdomain}
-  - certbot renew --dry-run
+  
+  # Give nginx time to fully start and be ready for certbot validation
+  # DNS propagation can take time, so we give it plenty of room
+  - sleep 20
+  
+  # -----------------------------
+  # 6. Issue SSL certificates with aggressive retry logic
+  # -----------------------------
+  - |
+    DOMAINS="${domains}"
+    DOMAIN_ARGS=""
+    for domain in $DOMAINS; do
+      DOMAIN_ARGS="$DOMAIN_ARGS -d $domain"
+    done
+    
+    for attempt in 1 2 3 4 5; do
+      echo "Attempt $attempt to issue certificate..."
+      if certbot --nginx --non-interactive --agree-tos -m ${email} $DOMAIN_ARGS; then
+        echo "Certificate issued successfully on attempt $attempt"
+        break
+      else
+        echo "Attempt $attempt failed, waiting 15 seconds before retry..."
+        sleep 15
+      fi
+    done
+  
+  - certbot renew --dry-run || true
