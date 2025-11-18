@@ -16,7 +16,7 @@ data "oci_core_images" "ubuntu_minimal" {
   sort_order               = "DESC"
 }
 
-resource "oci_core_instance" "vps_standard" {
+resource "oci_core_instance" "vps_free" {
   availability_domain = var.availability_domain
   compartment_id      = var.compartment_id
   display_name        = var.instance_name
@@ -53,3 +53,4 @@ resource "oci_core_instance" "vps_standard" {
     "Terraform"   = "true"
   }
 }
+

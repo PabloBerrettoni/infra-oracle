@@ -40,6 +40,11 @@ variable "subdomain" {
   type = string
 }
 
+variable "domains" {
+  type        = list(string)
+  description = "List of domains for nginx server_name"
+}
+
 variable "email" {
   type = string
 }

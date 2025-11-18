@@ -38,9 +38,10 @@ data "oci_identity_availability_domains" "ads" {
 
 # Create DNS Zone and Records
 module "dns" {
-  source       = "../../modules/dns"
-  tenancy_ocid = var.tenancy_ocid
-  vm_public_ip = module.compute_standard.public_ip
+  source                  = "../../modules/dns"
+  tenancy_ocid            = var.tenancy_ocid
+  vm_public_ip            = module.compute_portfolio.public_ip
+  translate_vm_public_ip  = module.compute_translate.public_ip
 }
 
 # Create networking resources
@@ -59,9 +60,9 @@ module "backend" {
   region           = var.region
 }
 
-# Create Compute Standard instance
-module "compute_standard" {
-  source = "../../modules/compute_standard"
+# Create Compute Portfolio instance
+module "compute_portfolio" {
+  source = "../../modules/compute_portfolio"
 
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.tenancy_ocid
@@ -69,6 +70,29 @@ module "compute_standard" {
   hostname_label      = "pablovps"
   ssh_public_keys     = var.ssh_public_keys
   subnet_id           = module.network.subnet_id
+  docker_image        = "clepo123/main:latest"
+  container_name      = "portfolio"
+  container_port      = 8082
+  subdomain           = "pabloberrettoni.com"
+  domains             = ["pabloberrettoni.com", "www.pabloberrettoni.com"]
+  email               = "pabloberrettoni98@gmail.com"
+}
+
+# Create Compute Translation instance for translation service
+module "compute_translate" {
+  source = "../../modules/compute_translate"
+
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.tenancy_ocid
+  instance_name       = "srt-translate-vps"
+  hostname_label      = "translate"
+  ssh_public_keys     = var.ssh_public_keys
+  subnet_id           = module.network.subnet_id
+  docker_image        = "clepo123/main:srt-translation"
+  container_name      = "srt-translate"
+  container_port      = 5000
+  subdomain           = "translate.pabloberrettoni.com"
+  email               = "pabloberrettoni98@gmail.com"
 }
 
 # Create Compute ARM instance | Commented out due to region not having the resources available
