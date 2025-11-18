@@ -5,20 +5,20 @@ output "tenancy_name" {
   value       = data.oci_identity_tenancy.current.name
 }
 
-# VPS outputs from the compute_standard module
-output "vps_public_ip" {
-  description = "Public IP address of the VPS"
-  value       = module.compute_standard.public_ip
+# Portfolio VPS outputs from the compute_portfolio module
+output "portfolio_public_ip" {
+  description = "Public IP address of the portfolio VPS"
+  value       = module.compute_portfolio.public_ip
 }
 
-output "vps_private_ip" {
-  description = "Private IP address of the VPS"
-  value       = module.compute_standard.private_ip
+output "portfolio_private_ip" {
+  description = "Private IP address of the portfolio VPS"
+  value       = module.compute_portfolio.private_ip
 }
 
-output "ssh_command" {
-  description = "SSH command to connect to the VPS"
-  value       = "ssh ubuntu@${module.compute_standard.public_ip}"
+output "portfolio_ssh_command" {
+  description = "SSH command to connect to the portfolio VPS"
+  value       = "ssh ubuntu@${module.compute_portfolio.public_ip}"
 }
 
 output "website_url" {

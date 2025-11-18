@@ -18,7 +18,8 @@ This project provides Infrastructure as Code (IaC) for deploying and managing cl
 
 ```
 ├── modules/
-│   ├── compute_standard/         # Standard compute instance (x86)
+│   ├── compute_portfolio/        # Portfolio website compute instance (x86)
+│   ├── compute_translate/        # Translation service compute instance (x86)
 │   ├── compute_arm/              # ARM compute instance (A1 Flex)
 │   ├── network/                  # VCN, subnet, security, gateway
 │   ├── dns/                      # DNS zone and records
