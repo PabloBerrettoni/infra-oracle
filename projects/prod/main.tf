@@ -38,10 +38,10 @@ data "oci_identity_availability_domains" "ads" {
 
 # Create DNS Zone and Records
 module "dns" {
-  source                  = "../../modules/dns"
-  tenancy_ocid            = var.tenancy_ocid
-  vm_public_ip            = module.compute_portfolio.public_ip
-  translate_vm_public_ip  = module.compute_translate.public_ip
+  source                 = "../../modules/dns"
+  tenancy_ocid           = var.tenancy_ocid
+  vm_public_ip           = module.compute_portfolio.public_ip
+  translate_vm_public_ip = module.compute_translate.public_ip
 }
 
 # Create networking resources
