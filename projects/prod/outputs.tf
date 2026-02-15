@@ -18,7 +18,7 @@ output "portfolio_private_ip" {
 
 output "portfolio_ssh_command" {
   description = "SSH command to connect to the portfolio VPS"
-  value       = "ssh ubuntu@${module.compute_portfolio.public_ip}"
+  value       = "ssh -o IdentitiesOnly=yes ubuntu@${module.compute_portfolio.public_ip}"
 }
 
 output "website_url" {
@@ -34,4 +34,15 @@ output "subnet_id" {
 output "vcn_id" {
   description = "ID of the VCN"
   value       = module.network.vcn_id
+}
+
+# OpenVPN VPS outputs
+output "vpn_public_ip" {
+  description = "Public IP address of the OpenVPN VPS"
+  value       = module.compute_openvpn.public_ip
+}
+
+output "vpn_ssh_command" {
+  description = "SSH command to connect to the OpenVPN VPS"
+  value       = "ssh -o IdentitiesOnly=yes ubuntu@${module.compute_openvpn.public_ip}"
 }

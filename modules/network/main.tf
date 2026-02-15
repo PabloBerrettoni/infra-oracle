@@ -82,6 +82,18 @@ resource "oci_core_default_security_list" "main" {
       max = 443
     }
   }
+
+  # Allow OpenVPN UDP
+  ingress_security_rules {
+    description = "Allow OpenVPN UDP"
+    protocol    = "17" # UDP
+    source      = "0.0.0.0/0"
+
+    udp_options {
+      min = 1194
+      max = 1194
+    }
+  }
 }
 
 # Create Public Subnet

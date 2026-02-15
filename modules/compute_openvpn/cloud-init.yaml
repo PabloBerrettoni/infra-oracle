@@ -1,0 +1,33 @@
+#cloud-config
+package_update: true
+package_upgrade: true
+packages:
+  - curl
+  - iptables-persistent
+
+runcmd:
+  # -----------------------------
+  # 1. Set firewall rules
+  # -----------------------------
+  - iptables -I INPUT -p udp --dport 1194 -j ACCEPT
+  - iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+  - iptables-save > /etc/iptables/rules.v4
+
+  # -----------------------------
+  # 2. Install OpenVPN using automated script
+  # -----------------------------
+  - |
+    PUBLIC_IP=$(curl -s https://api.ipify.org)
+    curl -O https://raw.githubusercontent.com/angristan/openvpn-install/master/openvpn-install.sh
+    chmod +x openvpn-install.sh
+    # Non-interactive installation defaults
+    APPROVE_INSTALL=y \
+    ENDPOINT=$PUBLIC_IP \
+    VPN_PROTO=1 \
+    VPN_PORT=1194 \
+    VPN_DNS=1 \
+    COMPRESSION_ENABLED=n \
+    CUSTOM_CONFIG=n \
+    CLIENT=user \
+    PASS=1 \
+    ./openvpn-install.sh

@@ -38,10 +38,9 @@ data "oci_identity_availability_domains" "ads" {
 
 # Create DNS Zone and Records
 module "dns" {
-  source                 = "../../modules/dns"
-  tenancy_ocid           = var.tenancy_ocid
-  vm_public_ip           = module.compute_portfolio.public_ip
-  translate_vm_public_ip = module.compute_translate.public_ip
+  source       = "../../modules/dns"
+  tenancy_ocid = var.tenancy_ocid
+  vm_public_ip = module.compute_portfolio.public_ip
 }
 
 # Create networking resources
@@ -78,8 +77,8 @@ module "compute_portfolio" {
   email               = "pabloberrettoni98@gmail.com"
 }
 
-# Create Compute Translation instance for translation service
-module "compute_translate" {
+# Create Compute Translation instance for translation service | Replaced by OpenVPN
+/* module "compute_translate" {
   source = "../../modules/compute_translate"
 
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
@@ -92,6 +91,19 @@ module "compute_translate" {
   container_name      = "srt-translate"
   container_port      = 5000
   subdomain           = "translate.pabloberrettoni.com"
+  email               = "pabloberrettoni98@gmail.com"
+} */
+
+# Create Compute OpenVPN instance
+module "compute_openvpn" {
+  source = "../../modules/compute_openvpn"
+
+  availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
+  compartment_id      = var.tenancy_ocid
+  instance_name       = "openvpn-vps"
+  hostname_label      = "vpn"
+  ssh_public_keys     = var.ssh_public_keys
+  subnet_id           = module.network.subnet_id
   email               = "pabloberrettoni98@gmail.com"
 }
 

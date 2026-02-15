@@ -16,7 +16,7 @@ data "oci_core_images" "ubuntu_minimal" {
   sort_order               = "DESC"
 }
 
-resource "oci_core_instance" "vps_standard" {
+resource "oci_core_instance" "vpn" {
   availability_domain = var.availability_domain
   compartment_id      = var.compartment_id
   display_name        = var.instance_name
@@ -39,19 +39,11 @@ resource "oci_core_instance" "vps_standard" {
   metadata = {
     ssh_authorized_keys = join("\n", [for key in var.ssh_public_keys : key.publickey])
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
-      ssh_public_key = join("\n", [for key in var.ssh_public_keys : key.publickey])
-      docker_image   = var.docker_image
-      container_name = var.container_name
-      container_port = var.container_port
-      subdomain      = var.subdomain
-      domains        = join(" ", var.domains)
-      email          = var.email
+      email = var.email
     }))
   }
 
   freeform_tags = {
-    "Environment" = "production"
-    "Purpose"     = "web-hosting"
-    "Terraform"   = "true"
+    "project" = "vpn"
   }
 }
