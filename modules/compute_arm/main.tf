@@ -12,17 +12,9 @@ data "oci_identity_availability_domains" "ads" {
   compartment_id = var.compartment_id
 }
 
-# Get the latest Ubuntu 24.04 image for ARM shape
-data "oci_core_images" "ubuntu" {
-  compartment_id           = var.compartment_id
-  operating_system         = "Canonical Ubuntu"
-  operating_system_version = "24.04"
-  shape                    = "VM.Standard.A1.Flex"
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
-}
+# Image OCID is pinned via var.image_ocid instead of picking the newest
+# image at plan time (avoids drift-forced replacement like compute_portfolio).
 
-# Create the VPS Instance
 resource "oci_core_instance" "vps" {
   availability_domain = data.oci_identity_availability_domains.ads.availability_domains[0].name
   compartment_id      = var.compartment_id
@@ -44,21 +36,24 @@ resource "oci_core_instance" "vps" {
 
   source_details {
     source_type = "image"
-    source_id   = data.oci_core_images.ubuntu.images[0].id
+    source_id   = var.image_ocid
   }
 
   metadata = {
     ssh_authorized_keys = join("\n", [for key in var.ssh_public_keys : key.publickey])
-    user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
-      ssh_public_keys = var.ssh_public_keys
-      domain          = var.domain
-      email           = var.email
-    }))
+    user_data           = base64encode(templatefile("${path.module}/cloud-init.yaml", {}))
+  }
+
+  # SSH keys are immutable on OCI instances (API rejects updates) and a
+  # metadata change forces replacement. Rotate keys on the OS, not via
+  # Terraform, so this never destroys/recreates the VM.
+  lifecycle {
+    ignore_changes = [metadata["ssh_authorized_keys"]]
   }
 
   freeform_tags = {
     "Environment" = "production"
-    "Purpose"     = "web-hosting"
+    "Purpose"     = "minecraft-server"
     "Terraform"   = "true"
   }
 }

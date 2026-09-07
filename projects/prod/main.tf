@@ -77,6 +77,19 @@ module "compute_portfolio" {
   email               = "pabloberrettoni98@gmail.com"
 }
 
+# Create Compute ARM instance - prepped Minecraft box (ports open, deploy later)
+module "compute_arm" {
+  source = "../../modules/compute_arm"
+
+  compartment_id  = var.tenancy_ocid
+  instance_name   = "minecraft-vps"
+  hostname_label  = "minecraft"
+  ssh_public_keys = var.ssh_public_keys
+  subnet_id       = module.network.subnet_id
+  ocpus           = 2
+  memory_in_gbs   = 12
+}
+
 # Create Compute Translation instance for translation service | Replaced by OpenVPN
 /* module "compute_translate" {
   source = "../../modules/compute_translate"
@@ -106,18 +119,3 @@ module "compute_openvpn" {
   subnet_id           = module.network.subnet_id
   email               = "pabloberrettoni98@gmail.com"
 }
-
-# Create Compute ARM instance | Commented out due to region not having the resources available
-/* module "compute_arm" {
-  source = "../../modules/compute_arm"
-
-  compartment_id  = var.tenancy_ocid
-  instance_name   = "pablo-web-vps"
-  hostname_label  = "pablovps"
-  ssh_public_keys = var.ssh_public_keys
-  subnet_id       = module.network.subnet_id
-  ocpus           = 2
-  memory_in_gbs   = 12
-  domain          = "pabloberrettoni.com"
-  email           = "pabloberrettoni98@gmail.com"
-} */
