@@ -48,3 +48,9 @@ variable "domains" {
 variable "email" {
   type = string
 }
+
+variable "image_ocid" {
+  description = "OCI image OCID to use. Pinned to a specific image to avoid drift-forced replacement (new releases would otherwise destroy/recreate the VMs)."
+  type        = string
+  default     = "ocid1.image.oc1.sa-saopaulo-1.aaaaaaaaridfqffskkfnob3bohkol53qhirbl3fwgtkkh4azs4m6hrl7iz7q"
+}

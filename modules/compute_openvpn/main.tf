@@ -7,14 +7,9 @@ terraform {
   }
 }
 
-data "oci_core_images" "ubuntu_minimal" {
-  compartment_id           = var.compartment_id
-  operating_system         = "Canonical Ubuntu"
-  operating_system_version = "22.04"
-  shape                    = "VM.Standard.E2.1.Micro"
-  sort_by                  = "TIMECREATED"
-  sort_order               = "DESC"
-}
+# Image OCID is pinned via var.image_ocid instead of picking the newest
+# image at plan time. Auto-resolving "latest" drifts every time Oracle
+# publishes a new build and forces instance replacement (downtime!).
 
 resource "oci_core_instance" "vpn" {
   availability_domain = var.availability_domain
@@ -32,7 +27,7 @@ resource "oci_core_instance" "vpn" {
 
   source_details {
     source_type             = "image"
-    source_id               = data.oci_core_images.ubuntu_minimal.images[0].id
+    source_id               = var.image_ocid
     boot_volume_size_in_gbs = 50
   }
 
@@ -41,6 +36,13 @@ resource "oci_core_instance" "vpn" {
     user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
       email = var.email
     }))
+  }
+
+  # SSH keys are immutable on OCI instances (API rejects updates) and a
+  # metadata change forces replacement. Rotate keys on the OS, not via
+  # Terraform, so this never destroys/recreates the VM.
+  lifecycle {
+    ignore_changes = [metadata["ssh_authorized_keys"]]
   }
 
   freeform_tags = {
