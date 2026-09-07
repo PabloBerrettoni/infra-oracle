@@ -94,6 +94,18 @@ resource "oci_core_default_security_list" "main" {
       max = 1194
     }
   }
+
+  # Allow Minecraft
+  ingress_security_rules {
+    description = "Allow Minecraft TCP"
+    protocol    = "6" # TCP
+    source      = "0.0.0.0/0"
+
+    tcp_options {
+      min = 25565
+      max = 25565
+    }
+  }
 }
 
 # Create Public Subnet

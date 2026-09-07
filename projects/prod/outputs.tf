@@ -5,20 +5,31 @@ output "tenancy_name" {
   value       = data.oci_identity_tenancy.current.name
 }
 
-# Portfolio VPS outputs from the compute_portfolio module
+# Portfolio site VPS outputs from the compute_portfolio module
 output "portfolio_public_ip" {
   description = "Public IP address of the portfolio VPS"
   value       = module.compute_portfolio.public_ip
 }
 
-output "portfolio_private_ip" {
-  description = "Private IP address of the portfolio VPS"
-  value       = module.compute_portfolio.private_ip
-}
-
 output "portfolio_ssh_command" {
   description = "SSH command to connect to the portfolio VPS"
   value       = "ssh -o IdentitiesOnly=yes ubuntu@${module.compute_portfolio.public_ip}"
+}
+
+# Minecraft ARM VPS outputs
+output "minecraft_public_ip" {
+  description = "Public IP address of the Minecraft (ARM) VPS"
+  value       = module.compute_arm.public_ip
+}
+
+output "minecraft_ssh_command" {
+  description = "SSH command to connect to the Minecraft VPS"
+  value       = "ssh -o IdentitiesOnly=yes ubuntu@${module.compute_arm.public_ip}"
+}
+
+output "minecraft_connect" {
+  description = "Minecraft server address (once deployed)"
+  value       = "${module.compute_arm.public_ip}:25565"
 }
 
 output "website_url" {

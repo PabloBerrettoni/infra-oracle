@@ -1,5 +1,26 @@
 #cloud-config
-users:
-  - name: opc
-    ssh-authorized-keys:
-      - ${ssh_public_key}
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io          # pre-installed for the future Minecraft deployment
+  - iptables-persistent
+
+runcmd:
+  # 1. Firewall: open Minecraft (25565 TCP) and SSH (22)
+  - iptables -I INPUT -p tcp --dport 25565 -j ACCEPT
+  - iptables -I INPUT -p tcp --dport 22 -j ACCEPT
+  - iptables-save > /etc/iptables/rules.v4
+
+  # ------------------------------------------------------------------
+  # Minecraft deployment comes later - this box is only prepped.
+  # When ready, launch the server (itzg image is multi-arch incl arm64):
+  #
+  #   docker run -d --name minecraft --restart unless-stopped \
+  #     -p 25565:25565 \
+  #     -e EULA=TRUE \
+  #     -e MEMORY=4G \
+  #     -e VERSION=LATEST \
+  #     -e ENABLE_RCON=true \
+  #     -v /opt/minecraft:/data \
+  #     itzg/minecraft-server:latest
+  # ------------------------------------------------------------------
