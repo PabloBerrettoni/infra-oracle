@@ -36,3 +36,17 @@ resource "oci_dns_rrset" "www_record" {
     rdata  = var.vm_public_ip
   }
 }
+
+# Crafty web UI subdomain -> Minecraft ARM box
+# Access it at https://crafty.pabloberrettoni.com:8443
+resource "oci_dns_rrset" "crafty_record" {
+  domain          = "crafty.pabloberrettoni.com"
+  rtype           = "A"
+  zone_name_or_id = oci_dns_zone.portfolio_zone.id
+  items {
+    domain = "crafty.pabloberrettoni.com"
+    rtype  = "A"
+    ttl    = 300
+    rdata  = var.crafty_ip
+  }
+}

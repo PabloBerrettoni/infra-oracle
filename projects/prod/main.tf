@@ -41,6 +41,7 @@ module "dns" {
   source       = "../../modules/dns"
   tenancy_ocid = var.tenancy_ocid
   vm_public_ip = module.compute_portfolio.public_ip
+  crafty_ip    = module.compute_arm.public_ip
 }
 
 # Create networking resources

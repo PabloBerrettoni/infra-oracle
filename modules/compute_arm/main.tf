@@ -44,11 +44,12 @@ resource "oci_core_instance" "vps" {
     user_data           = base64encode(templatefile("${path.module}/cloud-init.yaml", {}))
   }
 
-  # SSH keys are immutable on OCI instances (API rejects updates) and a
-  # metadata change forces replacement. Rotate keys on the OS, not via
-  # Terraform, so this never destroys/recreates the VM.
+  # metadata (ssh keys + user_data/cloud-init) is a ForceNew field in the
+  # OCI provider - ANY change would destroy & recreate the VM. Instance-level
+  # changes (rotating SSH keys, applying cloud-init updates) are done on the
+  # OS instead, so Terraform never rebuilds the box for them.
   lifecycle {
-    ignore_changes = [metadata["ssh_authorized_keys"]]
+    ignore_changes = [metadata]
   }
 
   freeform_tags = {
