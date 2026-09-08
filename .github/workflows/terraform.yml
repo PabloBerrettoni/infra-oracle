@@ -17,6 +17,10 @@ permissions:
   contents: read
   pull-requests: write
 
+concurrency:
+  group: terraform-apply
+  cancel-in-progress: false
+
 jobs:
   terraform:
     name: 'Terraform'
