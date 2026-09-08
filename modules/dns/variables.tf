@@ -6,3 +6,8 @@ variable "vm_public_ip" {
   type = string
 }
 
+variable "crafty_ip" {
+  description = "Public IP of the Crafty/Minecraft ARM instance"
+  type        = string
+}
+
