@@ -63,8 +63,8 @@ sudo docker exec crafty cat /crafty/app/config/default-creds.txt   # username "a
    deliberately when you actually want a new OS image.
 3. **cloud-init YAML: no multi-line backslash continuations.** cloud-init folds multiline
    `runcmd` entries into one line, leaving literal `\ ` which breaks docker/console
-   (exit 125). Keep every `runcmd` item on **one line**; use `printf '%s\n' '...'` to write
-   multi-line files (e.g., the Caddyfile).
+   (exit 125). Keep every `runcmd` item on **one line**; write multi-line files via
+   `printf '%s\n' ...` or a YAML block-scalar heredoc (`- |`), never backslash folds.
 4. **SSH keys are immutable on OCI** after creation — the update API rejects changes.
    Rotate keys on the OS or via a console connection.
 5. **State lock collisions:** pushes to `main` auto-apply; concurrent pushes collide with
@@ -76,6 +76,10 @@ sudo docker exec crafty cat /crafty/app/config/default-creds.txt   # username "a
 7. **DNS record lifecycle:** if a record is removed from config, the next apply deletes it
    from the zone. Deleting and re-adding DNS in separate commits breaks the site in between
    (and breaks Caddy's ACME cert issuance → NXDOMAIN).
+8. **Crafty behind a reverse proxy needs HTTP/1.1 WebSockets.** Tornado (Crafty) rejects
+   WebSockets over HTTP/2. Use Crafty's documented nginx recipe (`proxy_http_version 1.1`,
+   `proxy_set_header Upgrade $http_upgrade; Connection $http_connection`, buffering off,
+   3600s timeouts). Caddy `:2` cannot force h1.1 (`protocols` is not a recognized option).
 
 ## Repo layout
 
@@ -83,9 +87,10 @@ sudo docker exec crafty cat /crafty/app/config/default-creds.txt   # username "a
   pull, nginx reverse proxy, certbot).
 - `modules/compute_openvpn/` — micro running angristan's openvpn-install script.
 - `modules/compute_arm/` — A1.Flex box: Docker + **Crafty Controller** (PaperMC UI).
-  Cloud-init (single-line items) also runs a **Caddy** HTTPS proxy (Caddyfile via printf,
-  `reverse_proxy host.docker.internal:8443` with `--add-host host.docker.internal:host-gateway`).
-  Data persists at `/opt/crafty` and `/opt/caddy` on the host.
+  Cloud-init (single-line items + YAML block-scalar heredocs) also runs an **nginx**
+  HTTPS proxy (Crafty's documented WebSocket-safe recipe: `proxy_http_version 1.1`,
+  `Upgrade`/`Connection` headers, buffering off) with **certbot** (Let's Encrypt) and a
+  weekly renew cron. Data persists at `/opt/crafty` and `/opt/nginx-shared` on the host.
 - `modules/network/` — VCN, IGW, route table, default security list
   (ports: 22, 80, 443, 1194/UDP, 25565, 8000, 8443).
 - `modules/dns/` — zone + A records (apex, `www`, `crafty`).

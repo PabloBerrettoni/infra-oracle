@@ -6,10 +6,12 @@ packages:
   - iptables-persistent
 
 runcmd:
-  # 1. Firewall: Crafty web UI (8000/8443), Minecraft (25565), SSH (22)
+  # 1. Firewall: Crafty (8000/8443), Minecraft (25565), web (80/443), SSH (22)
   - iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 8443 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 25565 -j ACCEPT
+  - iptables -I INPUT -p tcp --dport 80 -j ACCEPT
+  - iptables -I INPUT -p tcp --dport 443 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 22 -j ACCEPT
   - iptables-save > /etc/iptables/rules.v4
 
@@ -17,20 +19,53 @@ runcmd:
   - docker pull arcadiatechnology/crafty-4:latest
 
   # 3. Run Crafty - Web UI that manages the PaperMC server
-  #    NOTE: must be a single line - cloud-init YAML mangles multi-line
-  #    backslash continuations into invalid args (exit 125).
   - mkdir -p /opt/crafty/appdata /opt/crafty/logs /opt/crafty/backups
   - docker run -d --name crafty --restart unless-stopped -p 8000:8000 -p 8443:8443 -p 25565:25565 -e TZ=America/Argentina/Buenos_Aires -v /opt/crafty/appdata:/crafty/appdata -v /opt/crafty/logs:/crafty/logs -v /opt/crafty/backups:/crafty/backups --cap-add NET_ADMIN arcadiatechnology/crafty-4:latest
 
-  # 4. HTTPS reverse proxy: Caddy (auto Let's Encrypt cert, auto-renew)
-  #    Proxies crafty.pabloberrettoni.com -> crafty:8443 on port 443
+  # 4. HTTPS reverse proxy: nginx (Crafty's documented WebSocket-safe recipe) + Let's Encrypt
   - iptables -I INPUT -p tcp --dport 80 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 443 -j ACCEPT
   - iptables-save > /etc/iptables/rules.v4
-  - mkdir -p /opt/caddy/data /opt/caddy/config
-  - printf '%s\n' '{' '    email pabloberrettoni98@gmail.com' '}' '' 'crafty.pabloberrettoni.com {' '    reverse_proxy host.docker.internal:8443 {' '        transport http {' '            tls_insecure_skip_verify' '        }' '    }' '}' > /opt/caddy/Caddyfile
-  - docker pull caddy:2
-  - docker run -d --name caddy --restart unless-stopped --add-host host.docker.internal:host-gateway -p 80:80 -p 443:443 -v /opt/caddy/Caddyfile:/etc/caddy/Caddyfile -v /opt/caddy/data:/data -v /opt/caddy/config:/config caddy:2
+  - mkdir -p /opt/nginx-shared/conf /opt/nginx-shared/certs /opt/nginx-shared/webroot
+  - docker pull nginx:alpine
+  - docker pull certbot/certbot
+  # Issue cert on a fresh box (port 80 is free at first boot; standalone ACME)
+  - docker run --rm -p 80:80 -v /opt/nginx-shared/certs:/etc/letsencrypt certbot/certbot certonly --standalone -d crafty.pabloberrettoni.com -m pabloberrettoni98@gmail.com --agree-tos --no-eff-email --non-interactive
+  - |
+    cat > /opt/nginx-shared/conf/crafty.conf <<'CONF'
+    server {
+        listen 80;
+        server_name crafty.pabloberrettoni.com;
+        location /.well-known/acme-challenge/ { root /var/www/certbot; }
+        location / { return 301 https://$host$request_uri; }
+    }
+    server {
+        listen 443 ssl;
+        server_name crafty.pabloberrettoni.com;
+        ssl_certificate     /etc/nginx/certs/live/crafty.pabloberrettoni.com/fullchain.pem;
+        ssl_certificate_key /etc/nginx/certs/live/crafty.pabloberrettoni.com/privkey.pem;
+        client_max_body_size 0;
+        location / {
+            proxy_http_version 1.1;
+            proxy_redirect off;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $http_connection;
+            proxy_set_header X-Forwarded-Proto https;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Host $http_host;
+            proxy_pass https://host.docker.internal:8443;
+            proxy_ssl_verify off;
+            proxy_buffering off;
+            proxy_connect_timeout 3600s;
+            proxy_read_timeout 3600s;
+            proxy_send_timeout 3600s;
+            send_timeout 3600s;
+        }
+    }
+    CONF
+  - docker run -d --name nginx-crafty --restart unless-stopped --add-host host.docker.internal:host-gateway -p 80:80 -p 443:443 -v /opt/nginx-shared/certs:/etc/nginx/certs:ro -v /opt/nginx-shared/conf:/etc/nginx/conf.d:ro -v /opt/nginx-shared/webroot:/var/www/certbot nginx:alpine
+  # Weekly cert renewal (webroot through nginx) + reload
+  - (crontab -l 2>/dev/null; echo "0 3 * * 1 docker run --rm -v /opt/nginx-shared/certs:/etc/letsencrypt -v /opt/nginx-shared/webroot:/var/www/certbot certbot/certbot renew --webroot -w /var/www/certbot --quiet && docker exec nginx-crafty nginx -s reload || true") | crontab -
 
   # 5. Create the PaperMC server from the Crafty UI once up (https://crafty.pabloberrettoni.com).
   #    Default admin credentials are auto-generated on first boot - get them with:
