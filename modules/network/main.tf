@@ -106,6 +106,53 @@ resource "oci_core_default_security_list" "main" {
       max = 25565
     }
   }
+
+  # Allow Crafty web UI (HTTP + HTTPS portals)
+  ingress_security_rules {
+    description = "Allow Crafty web UI HTTP"
+    protocol    = "6" # TCP
+    source      = "0.0.0.0/0"
+
+    tcp_options {
+      min = 8000
+      max = 8000
+    }
+  }
+
+  ingress_security_rules {
+    description = "Allow Crafty web UI HTTPS"
+    protocol    = "6" # TCP
+    source      = "0.0.0.0/0"
+
+    tcp_options {
+      min = 8443
+      max = 8443
+    }
+  }
+
+  # Allow HTTPS (Caddy reverse proxy for crafty subdomain)
+  ingress_security_rules {
+    description = "Allow HTTPS"
+    protocol    = "6" # TCP
+    source      = "0.0.0.0/0"
+
+    tcp_options {
+      min = 443
+      max = 443
+    }
+  }
+
+  # Allow HTTP (Caddy ACME challenge + redirect to HTTPS)
+  ingress_security_rules {
+    description = "Allow HTTP"
+    protocol    = "6" # TCP
+    source      = "0.0.0.0/0"
+
+    tcp_options {
+      min = 80
+      max = 80
+    }
+  }
 }
 
 # Create Public Subnet
