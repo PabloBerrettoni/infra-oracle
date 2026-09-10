@@ -45,6 +45,7 @@ module "dns" {
     { name = "", ip = module.compute_portfolio.public_ip }, # apex -> portfolio
     { name = "www", ip = module.compute_portfolio.public_ip },
     { name = "crafty", ip = module.compute_arm.public_ip }, # crafty UI -> ARM box
+    { name = "play", ip = module.compute_arm.public_ip },   # minecraft server -> ARM box
   ]
 }
 
