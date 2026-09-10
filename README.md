@@ -344,10 +344,6 @@ These behaviors are deliberate — they were learned the hard way:
 
 ---
 
-## License
-
-MIT License. See [LICENSE](LICENSE).
-
 ---
 
 ## Author
