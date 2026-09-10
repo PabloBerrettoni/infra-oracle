@@ -24,12 +24,8 @@ variable "ssh_public_keys" {
   }))
 }
 
-variable "email" {
-  type = string
-}
-
 variable "image_ocid" {
-  description = "OCI image OCID to use. Pinned to a specific image to avoid drift-forced replacement (new releases would otherwise destroy/recreate the VMs)."
+  description = "OCI image OCID to use. Pinned to a specific image to avoid drift-forced replacement (new releases would otherwise destroy/recreate the VMs). Region-specific - override with an image OCID from your home region."
   type        = string
   default     = "ocid1.image.oc1.sa-saopaulo-1.aaaaaaaaridfqffskkfnob3bohkol53qhirbl3fwgtkkh4azs4m6hrl7iz7q"
 }

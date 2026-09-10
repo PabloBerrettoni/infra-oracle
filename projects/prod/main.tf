@@ -38,10 +38,14 @@ data "oci_identity_availability_domains" "ads" {
 
 # Create DNS Zone and Records
 module "dns" {
-  source       = "../../modules/dns"
-  tenancy_ocid = var.tenancy_ocid
-  vm_public_ip = module.compute_portfolio.public_ip
-  crafty_ip    = module.compute_arm.public_ip
+  source         = "../../modules/dns"
+  compartment_id = var.tenancy_ocid
+  zone_name      = "pabloberrettoni.com"
+  records = [
+    { name = "", ip = module.compute_portfolio.public_ip }, # apex -> portfolio
+    { name = "www", ip = module.compute_portfolio.public_ip },
+    { name = "crafty", ip = module.compute_arm.public_ip }, # crafty UI -> ARM box
+  ]
 }
 
 # Create networking resources
@@ -82,13 +86,19 @@ module "compute_portfolio" {
 module "compute_arm" {
   source = "../../modules/compute_arm"
 
-  compartment_id  = var.tenancy_ocid
-  instance_name   = "minecraft-vps"
-  hostname_label  = "minecraft"
-  ssh_public_keys = var.ssh_public_keys
-  subnet_id       = module.network.subnet_id
-  ocpus           = 2
-  memory_in_gbs   = 12
+  compartment_id    = var.tenancy_ocid
+  instance_name     = "minecraft-vps"
+  hostname_label    = "minecraft"
+  ssh_public_keys   = var.ssh_public_keys
+  subnet_id         = module.network.subnet_id
+  ocpus             = 2
+  memory_in_gbs     = 12
+  domain            = "crafty.pabloberrettoni.com"
+  email             = "pabloberrettoni98@gmail.com"
+  timezone          = "America/Argentina/Buenos_Aires"
+  crafty_http_port  = 8000
+  crafty_https_port = 8443
+  minecraft_port    = 25565
 }
 
 # Create Compute Translation instance for translation service | Replaced by OpenVPN
@@ -118,5 +128,4 @@ module "compute_openvpn" {
   hostname_label      = "vpn"
   ssh_public_keys     = var.ssh_public_keys
   subnet_id           = module.network.subnet_id
-  email               = "pabloberrettoni98@gmail.com"
 }

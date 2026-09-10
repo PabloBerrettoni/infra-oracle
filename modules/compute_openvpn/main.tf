@@ -33,9 +33,7 @@ resource "oci_core_instance" "vpn" {
 
   metadata = {
     ssh_authorized_keys = join("\n", [for key in var.ssh_public_keys : key.publickey])
-    user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
-      email = var.email
-    }))
+    user_data           = base64encode(templatefile("${path.module}/cloud-init.yaml", {}))
   }
 
   # metadata (ssh keys + user_data/cloud-init) is a ForceNew field in the

@@ -6,10 +6,10 @@ packages:
   - iptables-persistent
 
 runcmd:
-  # 1. Firewall: Crafty (8000/8443), Minecraft (25565), web (80/443), SSH (22)
-  - iptables -I INPUT -p tcp --dport 8000 -j ACCEPT
-  - iptables -I INPUT -p tcp --dport 8443 -j ACCEPT
-  - iptables -I INPUT -p tcp --dport 25565 -j ACCEPT
+  # 1. Firewall: Crafty (${crafty_http_port}/${crafty_https_port}), Minecraft (${minecraft_port}), web (80/443), SSH (22)
+  - iptables -I INPUT -p tcp --dport ${crafty_http_port} -j ACCEPT
+  - iptables -I INPUT -p tcp --dport ${crafty_https_port} -j ACCEPT
+  - iptables -I INPUT -p tcp --dport ${minecraft_port} -j ACCEPT
   - iptables -I INPUT -p tcp --dport 80 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 443 -j ACCEPT
   - iptables -I INPUT -p tcp --dport 22 -j ACCEPT
@@ -20,7 +20,7 @@ runcmd:
 
   # 3. Run Crafty - Web UI that manages the PaperMC server
   - mkdir -p /opt/crafty/appdata /opt/crafty/logs /opt/crafty/backups
-  - docker run -d --name crafty --restart unless-stopped -p 8000:8000 -p 8443:8443 -p 25565:25565 -e TZ=America/Argentina/Buenos_Aires -v /opt/crafty/appdata:/crafty/appdata -v /opt/crafty/logs:/crafty/logs -v /opt/crafty/backups:/crafty/backups --cap-add NET_ADMIN arcadiatechnology/crafty-4:latest
+  - docker run -d --name crafty --restart unless-stopped -p ${crafty_http_port}:${crafty_http_port} -p ${crafty_https_port}:${crafty_https_port} -p ${minecraft_port}:${minecraft_port} -e TZ=${timezone} -v /opt/crafty/appdata:/crafty/appdata -v /opt/crafty/logs:/crafty/logs -v /opt/crafty/backups:/crafty/backups --cap-add NET_ADMIN arcadiatechnology/crafty-4:latest
 
   # 4. HTTPS reverse proxy: nginx (Crafty's documented WebSocket-safe recipe) + Let's Encrypt
   - iptables -I INPUT -p tcp --dport 80 -j ACCEPT
@@ -30,20 +30,20 @@ runcmd:
   - docker pull nginx:alpine
   - docker pull certbot/certbot
   # Issue cert on a fresh box (port 80 is free at first boot; standalone ACME)
-  - docker run --rm -p 80:80 -v /opt/nginx-shared/certs:/etc/letsencrypt certbot/certbot certonly --standalone -d crafty.pabloberrettoni.com -m pabloberrettoni98@gmail.com --agree-tos --no-eff-email --non-interactive
+  - docker run --rm -p 80:80 -v /opt/nginx-shared/certs:/etc/letsencrypt certbot/certbot certonly --standalone -d ${domain} -m ${email} --agree-tos --no-eff-email --non-interactive
   - |
     cat > /opt/nginx-shared/conf/crafty.conf <<'CONF'
     server {
         listen 80;
-        server_name crafty.pabloberrettoni.com;
+        server_name ${domain};
         location /.well-known/acme-challenge/ { root /var/www/certbot; }
         location / { return 301 https://$host$request_uri; }
     }
     server {
         listen 443 ssl;
-        server_name crafty.pabloberrettoni.com;
-        ssl_certificate     /etc/nginx/certs/live/crafty.pabloberrettoni.com/fullchain.pem;
-        ssl_certificate_key /etc/nginx/certs/live/crafty.pabloberrettoni.com/privkey.pem;
+        server_name ${domain};
+        ssl_certificate     /etc/nginx/certs/live/${domain}/fullchain.pem;
+        ssl_certificate_key /etc/nginx/certs/live/${domain}/privkey.pem;
         client_max_body_size 0;
         location / {
             proxy_http_version 1.1;
@@ -53,7 +53,7 @@ runcmd:
             proxy_set_header X-Forwarded-Proto https;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header Host $http_host;
-            proxy_pass https://host.docker.internal:8443;
+            proxy_pass https://host.docker.internal:${crafty_https_port};
             proxy_ssl_verify off;
             proxy_buffering off;
             proxy_connect_timeout 3600s;
@@ -67,6 +67,6 @@ runcmd:
   # Weekly cert renewal (webroot through nginx) + reload
   - (crontab -l 2>/dev/null; echo "0 3 * * 1 docker run --rm -v /opt/nginx-shared/certs:/etc/letsencrypt -v /opt/nginx-shared/webroot:/var/www/certbot certbot/certbot renew --webroot -w /var/www/certbot --quiet && docker exec nginx-crafty nginx -s reload || true") | crontab -
 
-  # 5. Create the PaperMC server from the Crafty UI once up (https://crafty.pabloberrettoni.com).
+  # 5. Create the PaperMC server from the Crafty UI once up (https://${domain}).
   #    Default admin credentials are auto-generated on first boot - get them with:
   #    sudo docker exec crafty cat /crafty/app/config/default-creds.txt

@@ -7,46 +7,56 @@ terraform {
   }
 }
 
-resource "oci_dns_zone" "portfolio_zone" {
-  compartment_id = var.tenancy_ocid
-  name           = "pabloberrettoni.com"
+locals {
+  # Fully-qualified domain for each record: "" means the apex.
+  fqdns = {
+    for r in var.records :
+    (r.name == "" ? var.zone_name : "${r.name}.${var.zone_name}") => r
+  }
+}
+
+resource "oci_dns_zone" "zone" {
+  compartment_id = var.compartment_id
+  name           = var.zone_name
   zone_type      = "PRIMARY"
 }
 
-resource "oci_dns_rrset" "a_record" {
-  domain          = "pabloberrettoni.com"
+# One A record per entry in var.records.
+resource "oci_dns_rrset" "a_records" {
+  for_each = local.fqdns
+
+  zone_name_or_id = oci_dns_zone.zone.id
+  domain          = each.key
   rtype           = "A"
-  zone_name_or_id = oci_dns_zone.portfolio_zone.id
+
   items {
-    domain = "pabloberrettoni.com"
+    domain = each.key
     rtype  = "A"
-    ttl    = 300
-    rdata  = var.vm_public_ip
+    ttl    = var.ttl
+    rdata  = each.value.ip
   }
 }
 
-resource "oci_dns_rrset" "www_record" {
-  domain          = "www.pabloberrettoni.com"
-  rtype           = "A"
-  zone_name_or_id = oci_dns_zone.portfolio_zone.id
-  items {
-    domain = "www.pabloberrettoni.com"
-    rtype  = "A"
-    ttl    = 300
-    rdata  = var.vm_public_ip
-  }
+# --- One-time migration of this deployment's pre-refactor state -------------
+# Moved blocks only apply when the source exists in state, so fresh users
+# (or anyone who already applied this refactor) are unaffected. Safe to
+# delete once this commit's apply has run.
+moved {
+  from = oci_dns_zone.portfolio_zone
+  to   = oci_dns_zone.zone
 }
 
-# Crafty web UI subdomain -> Minecraft ARM box
-# Access it at https://crafty.pabloberrettoni.com:8443
-resource "oci_dns_rrset" "crafty_record" {
-  domain          = "crafty.pabloberrettoni.com"
-  rtype           = "A"
-  zone_name_or_id = oci_dns_zone.portfolio_zone.id
-  items {
-    domain = "crafty.pabloberrettoni.com"
-    rtype  = "A"
-    ttl    = 300
-    rdata  = var.crafty_ip
-  }
+moved {
+  from = oci_dns_rrset.a_record
+  to   = oci_dns_rrset.a_records["pabloberrettoni.com"]
+}
+
+moved {
+  from = oci_dns_rrset.www_record
+  to   = oci_dns_rrset.a_records["www.pabloberrettoni.com"]
+}
+
+moved {
+  from = oci_dns_rrset.crafty_record
+  to   = oci_dns_rrset.a_records["crafty.pabloberrettoni.com"]
 }

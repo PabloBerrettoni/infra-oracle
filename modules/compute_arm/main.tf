@@ -41,7 +41,14 @@ resource "oci_core_instance" "vps" {
 
   metadata = {
     ssh_authorized_keys = join("\n", [for key in var.ssh_public_keys : key.publickey])
-    user_data           = base64encode(templatefile("${path.module}/cloud-init.yaml", {}))
+    user_data = base64encode(templatefile("${path.module}/cloud-init.yaml", {
+      domain            = var.domain
+      email             = var.email
+      timezone          = var.timezone
+      crafty_http_port  = var.crafty_http_port
+      crafty_https_port = var.crafty_https_port
+      minecraft_port    = var.minecraft_port
+    }))
   }
 
   # metadata (ssh keys + user_data/cloud-init) is a ForceNew field in the

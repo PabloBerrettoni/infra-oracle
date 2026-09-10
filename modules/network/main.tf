@@ -16,8 +16,8 @@ data "oci_identity_availability_domains" "ads" {
 resource "oci_core_vcn" "main" {
   compartment_id = var.compartment_id
   display_name   = "${var.network_name}-vcn"
-  cidr_blocks    = ["10.0.0.0/16"]
-  dns_label      = "mainvcn"
+  cidr_blocks    = [var.vcn_cidr]
+  dns_label      = var.vcn_dns_label
 }
 
 # Create Internet Gateway
@@ -50,107 +50,35 @@ resource "oci_core_default_security_list" "main" {
     protocol    = "all"
   }
 
-  # Allow SSH
-  ingress_security_rules {
-    protocol = "6" # TCP
-    source   = "0.0.0.0/0"
+  # TCP ingress ports opened to the internet
+  dynamic "ingress_security_rules" {
+    for_each = var.allowed_tcp_ports
 
-    tcp_options {
-      min = 22
-      max = 22
+    content {
+      description = "Allow TCP ${ingress_security_rules.value}"
+      protocol    = "6" # TCP
+      source      = "0.0.0.0/0"
+
+      tcp_options {
+        min = ingress_security_rules.value
+        max = ingress_security_rules.value
+      }
     }
   }
 
-  # Allow HTTP
-  ingress_security_rules {
-    protocol = "6" # TCP
-    source   = "0.0.0.0/0"
+  # UDP ingress ports opened to the internet
+  dynamic "ingress_security_rules" {
+    for_each = var.allowed_udp_ports
 
-    tcp_options {
-      min = 80
-      max = 80
-    }
-  }
+    content {
+      description = "Allow UDP ${ingress_security_rules.value}"
+      protocol    = "17" # UDP
+      source      = "0.0.0.0/0"
 
-  # Allow HTTPS
-  ingress_security_rules {
-    protocol = "6" # TCP
-    source   = "0.0.0.0/0"
-
-    tcp_options {
-      min = 443
-      max = 443
-    }
-  }
-
-  # Allow OpenVPN UDP
-  ingress_security_rules {
-    description = "Allow OpenVPN UDP"
-    protocol    = "17" # UDP
-    source      = "0.0.0.0/0"
-
-    udp_options {
-      min = 1194
-      max = 1194
-    }
-  }
-
-  # Allow Minecraft
-  ingress_security_rules {
-    description = "Allow Minecraft TCP"
-    protocol    = "6" # TCP
-    source      = "0.0.0.0/0"
-
-    tcp_options {
-      min = 25565
-      max = 25565
-    }
-  }
-
-  # Allow Crafty web UI (HTTP + HTTPS portals)
-  ingress_security_rules {
-    description = "Allow Crafty web UI HTTP"
-    protocol    = "6" # TCP
-    source      = "0.0.0.0/0"
-
-    tcp_options {
-      min = 8000
-      max = 8000
-    }
-  }
-
-  ingress_security_rules {
-    description = "Allow Crafty web UI HTTPS"
-    protocol    = "6" # TCP
-    source      = "0.0.0.0/0"
-
-    tcp_options {
-      min = 8443
-      max = 8443
-    }
-  }
-
-  # Allow HTTPS (Caddy reverse proxy for crafty subdomain)
-  ingress_security_rules {
-    description = "Allow HTTPS"
-    protocol    = "6" # TCP
-    source      = "0.0.0.0/0"
-
-    tcp_options {
-      min = 443
-      max = 443
-    }
-  }
-
-  # Allow HTTP (Caddy ACME challenge + redirect to HTTPS)
-  ingress_security_rules {
-    description = "Allow HTTP"
-    protocol    = "6" # TCP
-    source      = "0.0.0.0/0"
-
-    tcp_options {
-      min = 80
-      max = 80
+      udp_options {
+        min = ingress_security_rules.value
+        max = ingress_security_rules.value
+      }
     }
   }
 }
@@ -159,9 +87,9 @@ resource "oci_core_default_security_list" "main" {
 resource "oci_core_subnet" "public" {
   compartment_id             = var.compartment_id
   vcn_id                     = oci_core_vcn.main.id
-  cidr_block                 = "10.0.1.0/24"
+  cidr_block                 = var.public_subnet_cidr
   display_name               = "${var.network_name}-public-subnet"
-  dns_label                  = "public"
+  dns_label                  = var.subnet_dns_label
   availability_domain        = data.oci_identity_availability_domains.ads.availability_domains[0].name
   prohibit_public_ip_on_vnic = false
 }
