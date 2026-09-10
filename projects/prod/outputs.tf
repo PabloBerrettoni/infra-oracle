@@ -47,6 +47,11 @@ output "vcn_id" {
   value       = module.network.vcn_id
 }
 
+output "dns_nameservers" {
+  description = "OCI nameservers for the DNS zone (set these as NS records at your registrar)"
+  value       = module.dns.nameservers
+}
+
 # OpenVPN VPS outputs
 output "vpn_public_ip" {
   description = "Public IP address of the OpenVPN VPS"
