@@ -36,3 +36,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Local-only project guide (not versioned)
+/AGENTS.md
